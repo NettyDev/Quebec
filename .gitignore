@@ -1,0 +1,52 @@
+# Unity standard ignore rules
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Memory dumps and crash reports
+/[Mm]emory[Dd]umps/
+/[Cc]rash[Rr]eports/
+
+# Never git ignore mats and meta files belonging to assets
+!/[Aa]ssets/**/*.meta
+
+# Asset store packages
+/[Aa]ssets/[Aa]sset[Ss]tore[Pp]ackages/
+
+# Built application formats
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.dll
+*.exe
+
+# IDE and Editor files (Visual Studio, Rider, VS Code)
+.vs/
+.idea/
+.vscode/
+/*.sln
+/*.csproj
+/*.unityproj
+/*.suo
+/*.user
+/*.userprefs
+/*.pidb
+/*.booproj
+/*.svd
+/*.pdb
+/*.opendb
+/*.VC.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
