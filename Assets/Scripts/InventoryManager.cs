@@ -13,8 +13,11 @@ public class InventoryManager : MonoBehaviour
     public Sprite lidarSprite;     
     public Sprite flashlightSprite; 
 
+    [Tooltip("Przypisz obiekty UI z ikonami klawiszy (1, 2, 3)")]
+    public Image[] keyPromptIcons; // Nowa tablica dla ikon klawiszy
+
     [Header("2D Player Hands")]
-    [Tooltip("Przypisz obiekt 2D reprezentujący PUSTĄ RĘKĘ")]
+    [Tooltip("Przypisz obiekt reprezentujący PUSTĄ RĘKĘ")]
     public GameObject emptyHand2D;
     
     [Tooltip("Przypisz obiekt Lidaru z podpiętym skryptem LidarTool2D")]
@@ -42,7 +45,7 @@ public class InventoryManager : MonoBehaviour
     {
         currentSlotIndex = index;
 
-        // Aktualizacja podświetlenia (Highlight) - widoczne tylko dla aktywnego slota
+        // Aktualizacja podświetlenia tła
         for (int i = 0; i < slotHighlights.Length; i++)
         {
             if (slotHighlights[i] != null)
@@ -51,69 +54,73 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
+        // Aktualizacja przezroczystości ikon klawiszy
+        for (int i = 0; i < keyPromptIcons.Length; i++)
+        {
+            if (keyPromptIcons[i] != null)
+            {
+                // Pobieramy obecny kolor ikony
+                Color keyColor = keyPromptIcons[i].color;
+                
+                // Zmieniamy kanał Alpha (a): 0.2f (20%) dla aktywnego slota, 1f (100%) dla nieaktywnych
+                keyColor.a = (i == currentSlotIndex) ? 0.4f : 1f; 
+                
+                // Przypisujemy zmieniony kolor z powrotem do komponentu
+                keyPromptIcons[i].color = keyColor;
+            }
+        }
+
         ActivateEquippedItem();
     }
 
     private void ActivateEquippedItem()
     {
-        // 1. Zawsze na starcie ukrywamy pustą rękę i dezaktywujemy narzędzia
         if (emptyHand2D != null) emptyHand2D.SetActive(false);
         if (lidarTool != null) lidarTool.SetToolActive(false);
         if (flashlightTool != null) flashlightTool.SetToolActive(false);
 
-        // 2. Slot 1 (Klawisz '1')
         if (currentSlotIndex == 0)
         {
             if (hasLidar)
             {
-                // Przekazujemy informację do skryptu, że Lidar jest aktywny
                 if (lidarTool != null) lidarTool.SetToolActive(true);
             }
             else
             {
-                // Brak Lidaru = pokazujemy pustą rękę
                 if (emptyHand2D != null) emptyHand2D.SetActive(true);
             }
         }
-        // 3. Slot 2 (Klawisz '2')
         else if (currentSlotIndex == 1)
         {
             if (hasFlashlight)
             {
-                // Przekazujemy informację do skryptu, że Latarka jest aktywna
                 if (flashlightTool != null) flashlightTool.SetToolActive(true);
             }
             else
             {
-                // Brak Latarki = pokazujemy pustą rękę
                 if (emptyHand2D != null) emptyHand2D.SetActive(true);
             }
         }
-        // 4. Slot 3 (Klawisz '3')
         else if (currentSlotIndex == 2)
         {
-            // Slot 3 nigdy nie ma przypisanego przedmiotu = zawsze pokazujemy pustą rękę
             if (emptyHand2D != null) emptyHand2D.SetActive(true);
         }
     }
 
-    // Ta metoda zarządza WYŁĄCZNIE ikonami w ekwipunku, zgodnie z posiadanymi zmiennymi
     public void UpdateInventoryUI()
     {
-        // Slot 1: Lidar Icon
         if (slotIcons.Length > 0 && slotIcons[0] != null)
         {
             slotIcons[0].sprite = lidarSprite;
-            slotIcons[0].enabled = hasLidar; // Ikona widoczna zawsze, jeśli hasLidar = true
+            slotIcons[0].enabled = hasLidar;
         }
 
-        // Slot 2: Flashlight Icon
         if (slotIcons.Length > 1 && slotIcons[1] != null)
         {
             slotIcons[1].sprite = flashlightSprite;
-            slotIcons[1].enabled = hasFlashlight; // Ikona widoczna zawsze, jeśli hasFlashlight = true
+            slotIcons[1].enabled = hasFlashlight;
         }
 
-        ActivateEquippedItem(); // Odświeżamy stan w rękach w razie podniesienia przedmiotu
+        ActivateEquippedItem(); 
     }
 }
