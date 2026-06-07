@@ -16,6 +16,14 @@ public class InventoryManager : MonoBehaviour
     [Tooltip("Assign UI elements with key icons (1, 2, 3)")]
     public Image[] keyPromptIcons; // Array for key prompt icons
 
+    [Header("Animation Settings")]
+    [Tooltip("Assign the RectTransforms of Slot_1, Slot_2, Slot_3")]
+    public RectTransform[] slotRects;
+    [Tooltip("How many pixels to the right the active slot should move")]
+    public float activeOffsetX = 30f;
+    [Tooltip("Speed of the movement animation")]
+    public float animationSpeed = 10f;
+
     [Header("2D Player Hands")]
     [Tooltip("Assign the object representing the EMPTY HAND")]
     public GameObject emptyHand2D;
@@ -27,9 +35,30 @@ public class InventoryManager : MonoBehaviour
     public FlashlightTool2D flashlightTool;  
 
     private int currentSlotIndex = 0;
+    
+    // Animation internal variables
+    private float[] targetOffsets;
+    private float[] currentOffsets;
+    private Vector2[] basePositions;
 
     void Start()
     {
+        // Initialize animation arrays
+        if (slotRects != null && slotRects.Length > 0)
+        {
+            targetOffsets = new float[slotRects.Length];
+            currentOffsets = new float[slotRects.Length];
+            basePositions = new Vector2[slotRects.Length];
+
+            for (int i = 0; i < slotRects.Length; i++)
+            {
+                if (slotRects[i] != null)
+                {
+                    basePositions[i] = slotRects[i].anchoredPosition;
+                }
+            }
+        }
+
         UpdateInventoryUI();
         SelectSlot(0); 
     }
@@ -39,11 +68,36 @@ public class InventoryManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SelectSlot(2);
+
+        // Handle smooth slot movement animation
+        if (slotRects != null)
+        {
+            for (int i = 0; i < slotRects.Length; i++)
+            {
+                if (slotRects[i] != null)
+                {
+                    // Lerp towards the target offset
+                    currentOffsets[i] = Mathf.Lerp(currentOffsets[i], targetOffsets[i], Time.deltaTime * animationSpeed);
+                    
+                    // Apply offset to the original base position
+                    slotRects[i].anchoredPosition = new Vector2(basePositions[i].x + currentOffsets[i], slotRects[i].anchoredPosition.y);
+                }
+            }
+        }
     }
 
     private void SelectSlot(int index)
     {
         currentSlotIndex = index;
+
+        // Set target offsets for the animation
+        if (targetOffsets != null)
+        {
+            for (int i = 0; i < targetOffsets.Length; i++)
+            {
+                targetOffsets[i] = (i == currentSlotIndex) ? activeOffsetX : 0f;
+            }
+        }
 
         // Update background highlights
         for (int i = 0; i < slotHighlights.Length; i++)
