@@ -16,6 +16,9 @@ public class InventoryManager : MonoBehaviour
     [Tooltip("Assign UI elements with key icons (1, 2, 3)")]
     public Image[] keyPromptIcons; // Array for key prompt icons
 
+    [Tooltip("Assign UI Text element to display the active tool name")]
+    public Text toolNameText; // Text element for displaying item name
+
     [Header("Animation Settings")]
     [Tooltip("Assign the RectTransforms of Slot_1, Slot_2, Slot_3")]
     public RectTransform[] slotRects;
@@ -140,12 +143,16 @@ public class InventoryManager : MonoBehaviour
         if (lidarTool != null) lidarTool.SetToolActive(false);
         if (flashlightTool != null) flashlightTool.SetToolActive(false);
 
+        // Clear the tool name text by default
+        if (toolNameText != null) toolNameText.text = "";
+
         // Logic for Slot 1 (Lidar)
         if (currentSlotIndex == 0)
         {
             if (hasLidar)
             {
                 if (lidarTool != null) lidarTool.SetToolActive(true);
+                if (toolNameText != null) toolNameText.text = "Lidar"; // Display name
             }
             else
             {
@@ -158,6 +165,7 @@ public class InventoryManager : MonoBehaviour
             if (hasFlashlight)
             {
                 if (flashlightTool != null) flashlightTool.SetToolActive(true);
+                if (toolNameText != null) toolNameText.text = "Latarka"; // Display name
             }
             else
             {
