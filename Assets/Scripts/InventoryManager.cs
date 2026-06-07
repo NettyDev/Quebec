@@ -13,17 +13,17 @@ public class InventoryManager : MonoBehaviour
     public Sprite lidarSprite;     
     public Sprite flashlightSprite; 
 
-    [Tooltip("Przypisz obiekty UI z ikonami klawiszy (1, 2, 3)")]
-    public Image[] keyPromptIcons; // Nowa tablica dla ikon klawiszy
+    [Tooltip("Assign UI elements with key icons (1, 2, 3)")]
+    public Image[] keyPromptIcons; // Array for key prompt icons
 
     [Header("2D Player Hands")]
-    [Tooltip("Przypisz obiekt reprezentujący PUSTĄ RĘKĘ")]
+    [Tooltip("Assign the object representing the EMPTY HAND")]
     public GameObject emptyHand2D;
     
-    [Tooltip("Przypisz obiekt Lidaru z podpiętym skryptem LidarTool2D")]
+    [Tooltip("Assign the Lidar object with the LidarTool2D script attached")]
     public LidarTool2D lidarTool;       
     
-    [Tooltip("Przypisz obiekt Latarki z podpiętym skryptem FlashlightTool2D")]
+    [Tooltip("Assign the Flashlight object with the FlashlightTool2D script attached")]
     public FlashlightTool2D flashlightTool;  
 
     private int currentSlotIndex = 0;
@@ -45,7 +45,7 @@ public class InventoryManager : MonoBehaviour
     {
         currentSlotIndex = index;
 
-        // Aktualizacja podświetlenia tła
+        // Update background highlights
         for (int i = 0; i < slotHighlights.Length; i++)
         {
             if (slotHighlights[i] != null)
@@ -54,19 +54,25 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        // Aktualizacja przezroczystości ikon klawiszy
+        // Update key prompt icons opacity (40% when active, 100% when inactive)
         for (int i = 0; i < keyPromptIcons.Length; i++)
         {
             if (keyPromptIcons[i] != null)
             {
-                // Pobieramy obecny kolor ikony
                 Color keyColor = keyPromptIcons[i].color;
-                
-                // Zmieniamy kanał Alpha (a): 0.2f (20%) dla aktywnego slota, 1f (100%) dla nieaktywnych
                 keyColor.a = (i == currentSlotIndex) ? 0.4f : 1f; 
-                
-                // Przypisujemy zmieniony kolor z powrotem do komponentu
                 keyPromptIcons[i].color = keyColor;
+            }
+        }
+
+        // Update item icons opacity (100% when active, 50% when inactive)
+        for (int i = 0; i < slotIcons.Length; i++)
+        {
+            if (slotIcons[i] != null)
+            {
+                Color iconColor = slotIcons[i].color;
+                iconColor.a = (i == currentSlotIndex) ? 1f : 0.5f; 
+                slotIcons[i].color = iconColor;
             }
         }
 
@@ -75,10 +81,12 @@ public class InventoryManager : MonoBehaviour
 
     private void ActivateEquippedItem()
     {
+        // Hide all 2D hands first
         if (emptyHand2D != null) emptyHand2D.SetActive(false);
         if (lidarTool != null) lidarTool.SetToolActive(false);
         if (flashlightTool != null) flashlightTool.SetToolActive(false);
 
+        // Logic for Slot 1 (Lidar)
         if (currentSlotIndex == 0)
         {
             if (hasLidar)
@@ -90,6 +98,7 @@ public class InventoryManager : MonoBehaviour
                 if (emptyHand2D != null) emptyHand2D.SetActive(true);
             }
         }
+        // Logic for Slot 2 (Flashlight)
         else if (currentSlotIndex == 1)
         {
             if (hasFlashlight)
@@ -101,6 +110,7 @@ public class InventoryManager : MonoBehaviour
                 if (emptyHand2D != null) emptyHand2D.SetActive(true);
             }
         }
+        // Logic for Slot 3 (Empty Hand)
         else if (currentSlotIndex == 2)
         {
             if (emptyHand2D != null) emptyHand2D.SetActive(true);
@@ -109,12 +119,14 @@ public class InventoryManager : MonoBehaviour
 
     public void UpdateInventoryUI()
     {
+        // Update Slot 1
         if (slotIcons.Length > 0 && slotIcons[0] != null)
         {
             slotIcons[0].sprite = lidarSprite;
             slotIcons[0].enabled = hasLidar;
         }
 
+        // Update Slot 2
         if (slotIcons.Length > 1 && slotIcons[1] != null)
         {
             slotIcons[1].sprite = flashlightSprite;
