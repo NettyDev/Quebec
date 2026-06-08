@@ -81,8 +81,8 @@ public class FlashlightTool2D : MonoBehaviour
                 flashlightImage.sprite = isLightOn ? flashlightOnSprite : flashlightOffSprite;
             }
 
-            // Show battery UI only if the light is currently ON
-            ShowBatteryUI(isLightOn);
+            // SHOW BATTERY: Always show when the tool is equipped (Slot 2 selected)
+            ShowBatteryUI(true);
             UpdateBatteryUI(); 
         }
         else
@@ -95,7 +95,7 @@ public class FlashlightTool2D : MonoBehaviour
                 TurnOffLight();
             }
             
-            // Forcefully hide battery UI when switching to another slot
+            // HIDE BATTERY: Only hide when completely switching to another slot
             ShowBatteryUI(false);
         }
     }
@@ -171,9 +171,8 @@ public class FlashlightTool2D : MonoBehaviour
         {
             flashlightImage.sprite = flashlightOnSprite;
         }
-
-        // Show battery UI
-        ShowBatteryUI(true);
+        
+        // Note: Battery UI visibility is now handled by SetToolActive
     }
 
     private void TurnOffLight()
@@ -188,8 +187,7 @@ public class FlashlightTool2D : MonoBehaviour
             flashlightImage.sprite = flashlightOffSprite;
         }
 
-        // Hide battery UI
-        ShowBatteryUI(false);
+        // Note: Battery UI visibility is now handled by SetToolActive
     }
 
     private void UpdateBatteryUI()
@@ -214,5 +212,20 @@ public class FlashlightTool2D : MonoBehaviour
         {
             batteryText.gameObject.SetActive(show);
         }
+    }
+
+    // Public method to add battery from external sources (like pickups)
+    public void AddBattery(float amount)
+    {
+        batteryLevel += amount;
+        batteryLevel = Mathf.Clamp(batteryLevel, 0f, 100f); // Ensure it doesn't exceed 100%
+        
+        // Update the UI immediately if the flashlight is currently held
+        if (gameObject.activeInHierarchy)
+        {
+            UpdateBatteryUI();
+        }
+        
+        Debug.Log("Bateria naładowana! Aktualny stan: " + batteryLevel + "%");
     }
 }
