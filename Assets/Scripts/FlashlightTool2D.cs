@@ -17,8 +17,12 @@ public class FlashlightTool2D : MonoBehaviour
     public Sprite flashlightOffSprite;
 
     [Header("Flashlight Settings")]
-    [Tooltip("Spotlight component attached to the camera or player")]
+    [Tooltip("Spotlight component in the scene")]
     public Light spotlight;
+    [Tooltip("The target the spotlight should follow (e.g., Main Camera). If empty, it will auto-find Main Camera.")]
+    public Transform spotlightFollowTarget;
+    [Tooltip("How fast the spotlight catches up to the camera. Lower = more lag/heavier feel.")]
+    public float spotlightSwaySpeed = 8f;
     [Tooltip("Sound played when turning on")]
     public AudioClip turnOnSound;
     [Tooltip("Sound played when turning off")]
@@ -43,10 +47,18 @@ public class FlashlightTool2D : MonoBehaviour
         anim = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
         
-        // Ensure the light is off by default when starting
+        // Auto-assign the main camera as the target if nothing is set
+        if (spotlightFollowTarget == null && Camera.main != null)
+        {
+            spotlightFollowTarget = Camera.main.transform;
+        }
+
+        // Detach the spotlight from any parent so it doesn't instantly inherit camera rotation.
+        // This allows us to manually smooth its rotation in LateUpdate.
         if (spotlight != null)
         {
-            spotlight.enabled = false;
+            spotlight.transform.SetParent(null);
+            spotlight.enabled = false; // Ensure it's off by default
         }
 
         // Ensure the battery UI is hidden at start
@@ -109,6 +121,23 @@ public class FlashlightTool2D : MonoBehaviour
             {
                 TurnOffLight();
             }
+        }
+    }
+
+    void LateUpdate()
+    {
+        // Handle the smooth spotlight movement (Input Lag effect)
+        if (spotlight != null && spotlightFollowTarget != null)
+        {
+            // Instantly follow the position of the camera/player
+            spotlight.transform.position = spotlightFollowTarget.position;
+
+            // Smoothly interpolate the rotation towards the target rotation
+            spotlight.transform.rotation = Quaternion.Slerp(
+                spotlight.transform.rotation, 
+                spotlightFollowTarget.rotation, 
+                Time.deltaTime * spotlightSwaySpeed
+            );
         }
     }
 
