@@ -80,6 +80,22 @@ public class LidarTool2D : MonoBehaviour
     [Tooltip("Sound to play when scanning")]
     public AudioClip scanSound;
 
+    [Header("Monster Interaction (Efekt Grozy)")]
+    [Tooltip("Dźwięk odtwarzany, gdy Lidar zeskanuje potwora")]
+    public AudioClip monsterSpottedSound;
+    
+    [Tooltip("Kamera główna do wstrząsów. Jeśli puste, użyje Camera.main")]
+    public Camera mainCamera;
+    
+    [Tooltip("Komponent Image odpowiadający za czerwoną winietę na krawędziach ekranu")]
+    public Image redVignette;
+
+    [Tooltip("Jak mocno trzęsie się kamera?")]
+    public float shakeIntensity = 0.5f;
+    
+    [Tooltip("Ile czasu trwa wstrząs i winieta?")]
+    public float scareDuration = 1.5f;
+
     // Timer
     private float nextScanTime = 0f;
     private Material generatedMaterial;
@@ -90,11 +106,16 @@ public class LidarTool2D : MonoBehaviour
     // Przechowuje referencję do korutyny zmieniającej sprite, by móc ją przerwać w razie zmiany slotu
     private Coroutine spriteSwapCoroutine;
 
+    // Przechowuje informację o obecnym statusie strachu, aby efekty się nie nakładały
+    private bool isCurrentlyScared = false;
+    private Vector3 originalCameraPosition;
+
     private struct DotData
     {
         public Vector3 position;
         public Vector3 normal;
         public float distance;
+        public bool hitMonster; // Flaga oznaczająca czy ta kropka uderzyła w potwora
     }
 
     private void Reset()
@@ -130,6 +151,11 @@ public class LidarTool2D : MonoBehaviour
             raycastOrigin = Camera.main.transform;
         }
 
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
         if (dotColorGradient == null || dotColorGradient.colorKeys.Length == 0)
         {
             ResetGradientToThermal();
@@ -146,6 +172,14 @@ public class LidarTool2D : MonoBehaviour
 
         // Hide UI by default when the game starts
         ShowLidarUI(false);
+        
+        // Hide Vignette by default
+        if (redVignette != null)
+        {
+            Color c = redVignette.color;
+            c.a = 0f;
+            redVignette.color = c;
+        }
     }
 
     public void SetToolActive(bool isActive)
@@ -236,6 +270,9 @@ public class LidarTool2D : MonoBehaviour
         float yawStep = horizontalScanAngle / Mathf.Max(1, raysHorizontal - 1);
         float pitchStep = verticalScanAngle / Mathf.Max(1, raysVertical - 1);
 
+        // Zmienna, aby wyzwolić strach tylko raz na falę skanowania
+        bool foundMonsterInScan = false;
+
         // 1. ZOPTYMALIZOWANA SIATKA Z SZUMEM DLA RÓWNOMIERNEGO POKRYCIA
         for (int x = 0; x < raysHorizontal; x++)
         {
@@ -255,10 +292,14 @@ public class LidarTool2D : MonoBehaviour
 
                 if (Physics.Raycast(raycastOrigin.position, rayDirection, out RaycastHit hit, scanDistance))
                 {
+                    bool isMonster = hit.collider.CompareTag("Monster");
+                    if (isMonster) foundMonsterInScan = true;
+
                     pendingDots.Add(new DotData { 
                         position = hit.point + hit.normal * 0.01f, 
                         normal = hit.normal, 
-                        distance = hit.distance 
+                        distance = hit.distance,
+                        hitMonster = isMonster
                     });
 
                     // 2. SYSTEM ADAPTACYJNY OPARTY NA ZŁOTEJ SPIRALI (Idealny rozkład kołowy)
@@ -284,10 +325,14 @@ public class LidarTool2D : MonoBehaviour
 
                             if (Physics.Raycast(raycastOrigin.position, extraRayDir, out RaycastHit extraHit, scanDistance))
                             {
+                                bool isExtraMonster = extraHit.collider.CompareTag("Monster");
+                                if (isExtraMonster) foundMonsterInScan = true;
+
                                 pendingDots.Add(new DotData { 
                                     position = extraHit.point + extraHit.normal * 0.01f, 
                                     normal = extraHit.normal, 
-                                    distance = extraHit.distance + Random.Range(0.05f, 0.2f) 
+                                    distance = extraHit.distance + Random.Range(0.05f, 0.2f),
+                                    hitMonster = isExtraMonster
                                 });
                             }
                         }
@@ -297,7 +342,7 @@ public class LidarTool2D : MonoBehaviour
         }
 
         pendingDots.Sort((a, b) => a.distance.CompareTo(b.distance));
-        StartCoroutine(SpawnDotsWave(pendingDots));
+        StartCoroutine(SpawnDotsWave(pendingDots, foundMonsterInScan));
     }
 
     private IEnumerator SwapSpriteTemporarily()
@@ -315,10 +360,11 @@ public class LidarTool2D : MonoBehaviour
         }
     }
 
-    private IEnumerator SpawnDotsWave(List<DotData> dots)
+    private IEnumerator SpawnDotsWave(List<DotData> dots, bool monsterDetectedInScan)
     {
         float startTime = Time.time;
         int currentIndex = 0;
+        bool hasTriggeredScareThisWave = false;
 
         while (currentIndex < dots.Count)
         {
@@ -327,11 +373,82 @@ public class LidarTool2D : MonoBehaviour
             while (currentIndex < dots.Count && dots[currentIndex].distance <= currentWaveDistance)
             {
                 SpawnRedDot(dots[currentIndex].position, dots[currentIndex].normal, dots[currentIndex].distance);
+                
+                // Kiedy fala uderzy w potwora i jeszcze nie odpaliła strachu
+                if (dots[currentIndex].hitMonster && !hasTriggeredScareThisWave && !isCurrentlyScared)
+                {
+                    hasTriggeredScareThisWave = true;
+                    StartCoroutine(TriggerScareEffect());
+                }
+
                 currentIndex++;
             }
 
             yield return null; 
         }
+    }
+
+    private IEnumerator TriggerScareEffect()
+    {
+        isCurrentlyScared = true;
+        
+        if (audioSource != null && monsterSpottedSound != null)
+        {
+            audioSource.PlayOneShot(monsterSpottedSound);
+        }
+
+        if (mainCamera != null)
+        {
+            originalCameraPosition = mainCamera.transform.localPosition;
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < scareDuration)
+        {
+            elapsed += Time.deltaTime;
+            float timeRatio = elapsed / scareDuration; // Od 0.0 do 1.0
+            
+            // Efekt winiety: Pojawia się szybko (0.2s), potem powoli zanika
+            if (redVignette != null)
+            {
+                Color vColor = redVignette.color;
+                if (timeRatio < 0.2f)
+                {
+                    vColor.a = Mathf.Lerp(0f, 0.8f, timeRatio / 0.2f); // Max 80% opacity, żeby nie zasłonić za bardzo
+                }
+                else
+                {
+                    vColor.a = Mathf.Lerp(0.8f, 0f, (timeRatio - 0.2f) / 0.8f);
+                }
+                redVignette.color = vColor;
+            }
+
+            // Wstrząs kamery (malejący wraz z czasem)
+            if (mainCamera != null)
+            {
+                float currentShake = shakeIntensity * (1f - timeRatio);
+                Vector3 randomPoint = originalCameraPosition + Random.insideUnitSphere * currentShake;
+                mainCamera.transform.localPosition = randomPoint;
+            }
+
+            yield return null;
+        }
+
+        // Czyszczenie na koniec
+        if (mainCamera != null)
+        {
+            mainCamera.transform.localPosition = originalCameraPosition;
+        }
+        
+        if (redVignette != null)
+        {
+            Color c = redVignette.color;
+            c.a = 0f;
+            redVignette.color = c;
+        }
+
+        isCurrentlyScared = false;
     }
 
     private void SpawnRedDot(Vector3 position, Vector3 normal, float distance)
