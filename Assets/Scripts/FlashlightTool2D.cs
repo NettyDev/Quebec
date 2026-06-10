@@ -89,10 +89,18 @@ public class FlashlightTool2D : MonoBehaviour
         {
             Debug.Log("Informacja: Latarka została zdezaktywowana (Zmieniono Slot).");
             
-            // Turn off the light automatically when put away
+            // Turn off the light logic and play sound IF it was on
             if (isLightOn)
             {
                 TurnOffLight();
+            }
+            
+            // SAFETY CATCH: Force the actual light component off.
+            // This fixes the bug where the light is visible at game start
+            // because Awake() hasn't run on an inactive GameObject yet.
+            if (spotlight != null)
+            {
+                spotlight.enabled = false;
             }
             
             // HIDE BATTERY: Only hide when completely switching to another slot

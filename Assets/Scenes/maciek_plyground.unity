@@ -2660,7 +2660,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CrosshairManager
   crosshairImage: {fileID: 7433859070663308561}
-  customCursorSprite: {fileID: 21300000, guid: 3640dda1d262b7f44bebf456cbd16df1, type: 3}
+  defaultCursorSprite: {fileID: 21300000, guid: 3640dda1d262b7f44bebf456cbd16df1, type: 3}
+  interactCursorSprite: {fileID: 21300000, guid: 379a2c289d3bdc24a974fab50fd2754e, type: 3}
   crosshairSize: {x: 64, y: 64}
   crosshairColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2719798695505053741
@@ -4396,6 +4397,7 @@ MonoBehaviour:
   floatingUI: {fileID: 229462891}
   floatingText: {fileID: 77433409}
   uiHeightOffset: 0.3
+  crosshairManager: {fileID: 2655279134837252222}
 --- !u!222 &8768248171999091832
 CanvasRenderer:
   m_ObjectHideFlags: 0
