@@ -4,8 +4,12 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Collider))]
 public class InteractableItem : MonoBehaviour
 {
+    [Header("Interaction Settings")]
+    [Tooltip("Text to display when looking at this item (e.g., 'Pick up Battery')")]
+    public string interactText = "Podnies";
+
     [Header("Highlight Settings")]
-    [Tooltip("How much the object should glow when looked at. Increase this (e.g., 2 or 5) for a stronger glow.")]
+    [Tooltip("How much the object should glow when looked at.")]
     public float emissionIntensity = 2.0f;
     
     [Tooltip("Color of the glow highlight")]
@@ -16,7 +20,7 @@ public class InteractableItem : MonoBehaviour
     private bool hasEmissionEnabledOriginally;
 
     [Header("Interaction Events")]
-    [Tooltip("What happens when the player presses 'F' (e.g., call BatteryRefill.UseBattery)")]
+    [Tooltip("What happens when the player presses 'F'")]
     public UnityEvent onInteract;
 
     [Header("Audio Settings")]
@@ -29,10 +33,7 @@ public class InteractableItem : MonoBehaviour
         Renderer renderer = GetComponent<Renderer>();
         if (renderer != null)
         {
-            // Note: We use .material (which creates an instance) so we don't change the global material
             mat = renderer.material;
-            
-            // Check if the material already uses emission
             hasEmissionEnabledOriginally = mat.IsKeywordEnabled("_EMISSION");
             
             if (mat.HasProperty("_EmissionColor"))
@@ -46,11 +47,7 @@ public class InteractableItem : MonoBehaviour
     {
         if (mat != null && mat.HasProperty("_EmissionColor"))
         {
-            // VERY IMPORTANT: Re-enable the emission keyword before trying to set the color!
-            // This fixes the bug where the item only glows the very first time.
             mat.EnableKeyword("_EMISSION");
-            
-            // Set emission to the chosen color to simulate a glow/highlight outline
             mat.SetColor("_EmissionColor", highlightColor * emissionIntensity);
         }
     }
@@ -59,10 +56,8 @@ public class InteractableItem : MonoBehaviour
     {
         if (mat != null && mat.HasProperty("_EmissionColor"))
         {
-            // Revert to original emission
             mat.SetColor("_EmissionColor", originalEmissionColor);
             
-            // If it didn't have emission originally, disable it for performance
             if (!hasEmissionEnabledOriginally)
             {
                 mat.DisableKeyword("_EMISSION");
@@ -72,17 +67,16 @@ public class InteractableItem : MonoBehaviour
 
     public void Interact()
     {
-        // Play the interaction sound at the object's position before destroying it
-        // We use PlayClipAtPoint because the object will be destroyed immediately
+        // Play sound at the object's position
         if (interactSound != null)
         {
             AudioSource.PlayClipAtPoint(interactSound, transform.position);
         }
 
-        // Trigger all attached events (e.g., adding battery from the other script)
+        // Trigger events
         onInteract.Invoke();
 
-        // Remove the object from the map
+        // Remove the object
         Destroy(gameObject);
     }
 }
