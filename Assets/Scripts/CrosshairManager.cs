@@ -3,17 +3,22 @@ using UnityEngine.UI;
 
 public class CrosshairManager : MonoBehaviour
 {
-    [Header("UI Components")]
+    [Header("Elementy UI")]
     [SerializeField] private Image crosshairImage;
 
-    [Header("Crosshair Settings")]
-    [SerializeField] private Sprite customCursorSprite;
+    [Header("Ustawienia Celownika")]
+    [Tooltip("Domyślny sprite celownika")]
+    [SerializeField] private Sprite defaultCursorSprite; 
+    
+    [Tooltip("Sprite celownika pojawiający się przy najechaniu na obiekt interaktywny")]
+    [SerializeField] private Sprite interactCursorSprite; 
+    
     [SerializeField] private Vector2 crosshairSize = new Vector2(16f, 16f);
     [SerializeField] private Color crosshairColor = Color.white;
 
     void Start()
     {
-        // Ensure the hardware cursor is locked and hidden for the first-person control
+        // Upewnij się, że systemowy kursor jest zablokowany i ukryty dla widoku z pierwszej osoby
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
@@ -29,17 +34,31 @@ public class CrosshairManager : MonoBehaviour
     {
         if (crosshairImage == null) return;
 
-        // Assign the sprite if provided, otherwise it stays as the default UI square
-        if (customCursorSprite != null)
-        {
-            crosshairImage.sprite = customCursorSprite;
-        }
+        SetDefaultCrosshair();
 
         crosshairImage.color = crosshairColor;
 
-        // Force the RectTransform to be perfectly centered with a defined size
+        // Wymuś idealne wyśrodkowanie RectTransform z określoną wielkością
         RectTransform rectTransform = crosshairImage.rectTransform;
         rectTransform.anchoredPosition = Vector2.zero;
         rectTransform.sizeDelta = crosshairSize;
+    }
+
+    // Publiczna metoda wywoływana, gdy gracz nie patrzy na żaden interaktywny obiekt
+    public void SetDefaultCrosshair()
+    {
+        if (crosshairImage != null && defaultCursorSprite != null)
+        {
+            crosshairImage.sprite = defaultCursorSprite;
+        }
+    }
+
+    // Publiczna metoda wywoływana, gdy gracz patrzy na interaktywny obiekt
+    public void SetInteractCrosshair()
+    {
+        if (crosshairImage != null && interactCursorSprite != null)
+        {
+            crosshairImage.sprite = interactCursorSprite;
+        }
     }
 }
